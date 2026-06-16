@@ -51,6 +51,11 @@ function decorateIpo(ipo, history, nowIso, config) {
   };
 }
 
+function listDecoratedIpos(repo, nowIso, config) {
+  const historyByCode = groupSnapshotsByCode(repo.listAllRateSnapshots());
+  return repo.listIpos().map((ipo) => decorateIpo(ipo, historyByCode.get(ipo.securityCode) || [], nowIso, config));
+}
+
 async function refreshWithHtml({ html, repo, nowIso = new Date().toISOString(), config = buildConfig() }) {
   const parsed = parseWahShingIpoHtml(html);
   const active = parsed.active.map((row) => normalizeIpoRow(row, { status: "active", source: "wahshing" }));
@@ -70,9 +75,7 @@ async function refreshWithHtml({ html, repo, nowIso = new Date().toISOString(), 
     });
   }
 
-  const historyByCode = groupSnapshotsByCode(repo.listAllRateSnapshots());
-  const ipos = repo.listIpos();
-  const decorated = ipos.map((ipo) => decorateIpo(ipo, historyByCode.get(ipo.securityCode) || [], nowIso, config));
+  const decorated = listDecoratedIpos(repo, nowIso, config);
   for (const ipo of decorated.filter((row) => row.status === "active")) {
     const currentSnapshot = ipo.currentSnapshot || { estimatedMarginMultiple: null, hoursToCutoff: ipo.hoursToCutoff };
     for (const alert of buildAlertsForSnapshot({
@@ -111,15 +114,16 @@ async function refreshOnce(options = {}) {
     return refreshWithHtml({ html, repo, nowIso, config });
   } catch (error) {
     repo.setSourceStatus("wahshing", "error", error.message, nowIso);
+    const decorated = listDecoratedIpos(repo, nowIso, config);
     return {
       summary: {
-        activeCount: repo.listIpos().filter((ipo) => ipo.status === "active").length,
-        prepareListedCount: repo.listIpos().filter((ipo) => ipo.status === "prepare_listed").length,
+        activeCount: decorated.filter((ipo) => ipo.status === "active").length,
+        prepareListedCount: decorated.filter((ipo) => ipo.status === "prepare_listed").length,
         capturedAt: nowIso,
         error: error.message
       },
-      ipos: repo.listIpos(),
-      capitalWindows: buildCapitalWindows(repo.listIpos(), { defaultResultTime: config.defaultResultTime }),
+      ipos: decorated,
+      capitalWindows: buildCapitalWindows(decorated, { defaultResultTime: config.defaultResultTime }),
       alerts: repo.listAlerts(),
       sourceStatus: repo.getSourceStatus("wahshing")
     };
@@ -129,5 +133,6 @@ async function refreshOnce(options = {}) {
 module.exports = {
   refreshWithHtml,
   refreshOnce,
-  decorateIpo
+  decorateIpo,
+  listDecoratedIpos
 };
