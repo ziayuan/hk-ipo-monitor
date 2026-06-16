@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>港股打新监控</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>港股打新监控</h1>
+        <p id="captureLine">本地数据 · 非官方实时参考 · Asia/Hong_Kong</p>
+      </div>
+      <button id="refreshBtn" type="button" title="刷新数据">刷新</button>
+    </header>
+
+    <main>
+      <section class="metrics" aria-label="状态指标">
+        <div><span>当前可认购</span><strong id="activeCount">--</strong></div>
+        <div><span>下次截止</span><strong id="nextCutoff">--</strong></div>
+        <div><span>最高热度</span><strong id="hottestIpo">--</strong></div>
+        <div><span>数据状态</span><strong id="sourceStatus">--</strong></div>
+      </section>
+
+      <section class="layout">
+        <aside>
+          <div class="section-head">
+            <h2>当前机会</h2>
+            <span id="activeHint">--</span>
+          </div>
+          <div id="ipoCards" class="cards"></div>
+        </aside>
+
+        <section class="detail">
+          <div class="section-head">
+            <h2 id="detailTitle">选择一只 IPO</h2>
+            <span id="detailSignal">--</span>
+          </div>
+          <div id="detailMeta" class="detail-meta"></div>
+
+          <h3>认购倍数走势</h3>
+          <div class="chart-controls" aria-label="认购倍数对比选择">
+            <fieldset>
+              <legend>当前机会</legend>
+              <div id="currentSeriesOptions" class="series-options"></div>
+            </fieldset>
+            <fieldset>
+              <legend>历史样本</legend>
+              <div id="historySeriesOptions" class="series-options"></div>
+            </fieldset>
+          </div>
+          <div class="chart-panel">
+            <svg id="rateChart" class="rate-chart" role="img" aria-label="认购倍数走势折线图" viewBox="0 0 920 320"></svg>
+            <div id="chartLegend" class="chart-legend"></div>
+          </div>
+
+          <h3>资金错峰</h3>
+          <div id="capitalWindows" class="timeline"></div>
+
+          <h3>提醒</h3>
+          <div id="alerts" class="alerts"></div>
+        </section>
+      </section>
+
+      <p class="disclaimer">实时倍数是非官方参考值；正式认购数据以港交所配售结果公告为准。本面板不提交 IPO 申请，也不构成投资建议。</p>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
