@@ -315,6 +315,27 @@ aside,
   stroke-linejoin: round;
 }
 
+.chart-callout {
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.68;
+  pointer-events: none;
+}
+
+.chart-label-bg {
+  fill: rgba(255, 255, 255, 0.94);
+  stroke: #d7dde6;
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.chart-label {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
 .chart-empty {
   fill: var(--muted);
   font-size: 14px;

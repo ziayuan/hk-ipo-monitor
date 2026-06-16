@@ -235,6 +235,53 @@ function buildLinePath(points) {
   return path;
 }
 
+function annotationText(row, point) {
+  return `${row.name} ${fmtRate(point.value)}`;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function renderPointAnnotation(svg, row, point, seriesIndex, pointIndex, chartWidth, chartHeight) {
+  const textValue = annotationText(row, point);
+  const labelWidth = clamp(textValue.length * 7 + 12, 76, 160);
+  const labelHeight = 18;
+  const direction = point.x > chartWidth - 210 ? -1 : 1;
+  const verticalSteps = [-26, 24, -42, 40, -58, 56];
+  const dy = verticalSteps[(seriesIndex + pointIndex) % verticalSteps.length];
+  let labelX = point.x + direction * 14;
+  let labelY = point.y + dy;
+  if (direction < 0) labelX -= labelWidth;
+  labelX = clamp(labelX, 62, chartWidth - labelWidth - 8);
+  labelY = clamp(labelY, 16, chartHeight - 60);
+
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line.setAttribute("x1", point.x);
+  line.setAttribute("y1", point.y);
+  line.setAttribute("x2", direction > 0 ? labelX : labelX + labelWidth);
+  line.setAttribute("y2", labelY + labelHeight / 2);
+  line.setAttribute("class", "chart-callout");
+  line.setAttribute("stroke", row.color);
+  svg.appendChild(line);
+
+  const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  rect.setAttribute("x", labelX);
+  rect.setAttribute("y", labelY);
+  rect.setAttribute("width", labelWidth);
+  rect.setAttribute("height", labelHeight);
+  rect.setAttribute("rx", 4);
+  rect.setAttribute("class", "chart-label-bg");
+  svg.appendChild(rect);
+
+  const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  text.setAttribute("x", labelX + 6);
+  text.setAttribute("y", labelY + 13);
+  text.setAttribute("class", "chart-label");
+  text.textContent = textValue;
+  svg.appendChild(text);
+}
+
 function renderRateChart(payload) {
   const svg = $("rateChart");
   const legend = $("chartLegend");
@@ -288,7 +335,8 @@ function renderRateChart(payload) {
     svg.appendChild(text);
   }
 
-  for (const row of series) {
+  for (let seriesIndex = 0; seriesIndex < series.length; seriesIndex += 1) {
+    const row = series[seriesIndex];
     const points = row.points.map((point) => ({
       ...point,
       x: xForHours(point.hours, left, innerWidth),
@@ -313,6 +361,10 @@ function renderRateChart(payload) {
       circle.appendChild(title);
       svg.appendChild(circle);
     }
+
+    points
+      .filter((item) => item.value !== null)
+      .forEach((point, pointIndex) => renderPointAnnotation(svg, row, point, seriesIndex, pointIndex, width, height));
 
     const item = document.createElement("span");
     item.className = "legend-item";

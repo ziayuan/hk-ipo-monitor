@@ -28,8 +28,12 @@ test("dashboard display uses company names and Chinese capital-window wording", 
   }
   assert.doesNotMatch(appJs, /已截止，不能错峰/);
   assert.match(appJs, /item\.status !== "blocked"/);
-  for (const phrase of ["renderRateChart", "renderSeriesOptions", "历史样本", "当前机会", "xForHours", "seriesPoints"]) {
+  for (const phrase of ["renderRateChart", "renderSeriesOptions", "历史样本", "当前机会", "xForHours", "seriesPoints", "renderPointAnnotation", "annotationText"]) {
     assert.match(appJs, new RegExp(phrase));
+  }
+  const css = fs.readFileSync(path.join(__dirname, "..", "public", "styles.css"), "utf8");
+  for (const className of ["chart-callout", "chart-label", "chart-label-bg"]) {
+    assert.match(css, new RegExp(className));
   }
   assert.doesNotMatch(appJs, /\$\{row\.fromCode\} -> \$\{row\.toCode\}: \$\{row\.status\}/);
 });
