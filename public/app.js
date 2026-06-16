@@ -273,51 +273,57 @@ function buildLinePath(points) {
   return path;
 }
 
-function annotationText(row, point) {
-  return `${row.name} ${fmtRate(point.value)}`;
+function pointRows(series) {
+  return series
+    .flatMap((row) =>
+      row.points
+        .filter((point) => Number.isFinite(point.value))
+        .map((point) => ({
+          name: row.name,
+          group: row.group,
+          color: row.color,
+          label: point.label,
+          hours: point.actualHours,
+          value: point.value,
+          capturedAt: point.capturedAt
+        }))
+    )
+    .sort((a, b) => {
+      const hoursDiff = Number(b.hours) - Number(a.hours);
+      if (Number.isFinite(hoursDiff) && Math.abs(hoursDiff) > 0.001) return hoursDiff;
+      return `${a.group}:${a.name}`.localeCompare(`${b.group}:${b.name}`, "zh-Hans-CN");
+    });
 }
 
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
+function formatCapturedAt(value) {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  const pad = (part) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function renderPointAnnotation(svg, row, point, seriesIndex, pointIndex, chartWidth, chartHeight) {
-  const textValue = annotationText(row, point);
-  const labelWidth = clamp(textValue.length * 7 + 12, 76, 160);
-  const labelHeight = 18;
-  const direction = point.x > chartWidth - 210 ? -1 : 1;
-  const verticalSteps = [-26, 24, -42, 40, -58, 56];
-  const dy = verticalSteps[(seriesIndex + pointIndex) % verticalSteps.length];
-  let labelX = point.x + direction * 14;
-  let labelY = point.y + dy;
-  if (direction < 0) labelX -= labelWidth;
-  labelX = clamp(labelX, 62, chartWidth - labelWidth - 8);
-  labelY = clamp(labelY, 16, chartHeight - 60);
+function renderChartDataRows(series) {
+  const body = $("chartDataRows");
+  const rows = pointRows(series);
+  body.innerHTML = "";
+  if (!rows.length) {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td colspan="4" class="empty-cell">暂无点位数据</td>`;
+    body.appendChild(row);
+    return;
+  }
 
-  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  line.setAttribute("x1", point.x);
-  line.setAttribute("y1", point.y);
-  line.setAttribute("x2", direction > 0 ? labelX : labelX + labelWidth);
-  line.setAttribute("y2", labelY + labelHeight / 2);
-  line.setAttribute("class", "chart-callout");
-  line.setAttribute("stroke", row.color);
-  svg.appendChild(line);
-
-  const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-  rect.setAttribute("x", labelX);
-  rect.setAttribute("y", labelY);
-  rect.setAttribute("width", labelWidth);
-  rect.setAttribute("height", labelHeight);
-  rect.setAttribute("rx", 4);
-  rect.setAttribute("class", "chart-label-bg");
-  svg.appendChild(rect);
-
-  const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  text.setAttribute("x", labelX + 6);
-  text.setAttribute("y", labelY + 13);
-  text.setAttribute("class", "chart-label");
-  text.textContent = textValue;
-  svg.appendChild(text);
+  for (const item of rows) {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td><span class="series-dot" style="background:${item.color}"></span>${escapeHtml(item.name)}<em>${escapeHtml(item.group)}</em></td>
+      <td>${fmtHours(item.hours)}</td>
+      <td>${fmtRate(item.value)}</td>
+      <td>${escapeHtml(formatCapturedAt(item.capturedAt))}</td>
+    `;
+    body.appendChild(row);
+  }
 }
 
 function renderRateChart(payload) {
@@ -326,6 +332,7 @@ function renderRateChart(payload) {
   svg.innerHTML = "";
   legend.innerHTML = "";
   const series = selectedSeries(payload);
+  renderChartDataRows(series);
   const values = series.flatMap((row) => row.points.map((point) => point.value)).filter((value) => Number.isFinite(value));
   if (!values.length) {
     svg.innerHTML = `<text x="460" y="160" text-anchor="middle" class="chart-empty">暂无可绘制的认购倍数</text>`;
@@ -399,10 +406,6 @@ function renderRateChart(payload) {
       circle.appendChild(title);
       svg.appendChild(circle);
     }
-
-    points
-      .filter((item) => item.value !== null)
-      .forEach((point, pointIndex) => renderPointAnnotation(svg, row, point, seriesIndex, pointIndex, width, height));
 
     const item = document.createElement("span");
     item.className = "legend-item";

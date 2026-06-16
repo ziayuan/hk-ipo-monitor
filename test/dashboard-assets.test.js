@@ -7,7 +7,7 @@ test("dashboard shell exposes required panels and cutoff buckets", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
   const appJs = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
 
-  for (const id of ["activeCount", "nextCutoff", "hottestIpo", "sourceStatus", "ipoCards", "rateChart", "currentSeriesOptions", "historySeriesOptions", "capitalWindows", "alerts"]) {
+  for (const id of ["activeCount", "nextCutoff", "hottestIpo", "sourceStatus", "ipoCards", "rateChart", "chartDataRows", "currentSeriesOptions", "historySeriesOptions", "capitalWindows", "alerts"]) {
     assert.match(html, new RegExp(`id="${id}"`));
   }
   for (const bucket of ["48h", "36h", "24h", "12h", "8h", "4h", "final"]) {
@@ -28,12 +28,15 @@ test("dashboard display uses company names and Chinese capital-window wording", 
   }
   assert.doesNotMatch(appJs, /已截止，不能错峰/);
   assert.match(appJs, /item\.status !== "blocked"/);
-  for (const phrase of ["renderRateChart", "renderSeriesOptions", "历史样本", "当前机会", "xForHours", "seriesPoints", "rateHistory", "actualHours", "compactHistorySnapshots", "renderPointAnnotation", "annotationText"]) {
+  for (const phrase of ["renderRateChart", "renderChartDataRows", "pointRows", "renderSeriesOptions", "历史样本", "当前机会", "xForHours", "seriesPoints", "rateHistory", "actualHours", "compactHistorySnapshots"]) {
     assert.match(appJs, new RegExp(phrase));
   }
   const css = fs.readFileSync(path.join(__dirname, "..", "public", "styles.css"), "utf8");
-  for (const className of ["chart-callout", "chart-label", "chart-label-bg"]) {
+  for (const className of ["chart-data-table", "chart-data-scroll"]) {
     assert.match(css, new RegExp(className));
+  }
+  for (const removed of ["renderPointAnnotation", "chart-callout", "chart-label-bg"]) {
+    assert.doesNotMatch(appJs + css, new RegExp(removed));
   }
   assert.doesNotMatch(appJs, /\$\{row\.fromCode\} -> \$\{row\.toCode\}: \$\{row\.status\}/);
 });

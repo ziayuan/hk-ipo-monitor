@@ -315,27 +315,6 @@ aside,
   stroke-linejoin: round;
 }
 
-.chart-callout {
-  stroke-width: 1;
-  stroke-dasharray: 3 3;
-  opacity: 0.68;
-  pointer-events: none;
-}
-
-.chart-label-bg {
-  fill: rgba(255, 255, 255, 0.94);
-  stroke: #d7dde6;
-  stroke-width: 1;
-  pointer-events: none;
-}
-
-.chart-label {
-  fill: var(--ink);
-  font-size: 11px;
-  font-weight: 700;
-  pointer-events: none;
-}
-
 .chart-empty {
   fill: var(--muted);
   font-size: 14px;
@@ -366,6 +345,63 @@ aside,
 .legend-item em {
   color: var(--muted);
   font-style: normal;
+}
+
+.chart-data-scroll {
+  max-height: 176px;
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  overflow: auto;
+}
+
+.chart-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.chart-data-table th,
+.chart-data-table td {
+  padding: 8px 7px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.chart-data-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
+  color: var(--muted);
+  font-weight: 700;
+  text-align: left;
+}
+
+.chart-data-table th:nth-child(2),
+.chart-data-table th:nth-child(3),
+.chart-data-table td:nth-child(2),
+.chart-data-table td:nth-child(3) {
+  text-align: right;
+}
+
+.chart-data-table em {
+  margin-left: 5px;
+  color: var(--muted);
+  font-style: normal;
+}
+
+.series-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 999px;
+  vertical-align: middle;
+}
+
+.empty-cell {
+  color: var(--muted);
+  text-align: center;
 }
 
 .timeline,

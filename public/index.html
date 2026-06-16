@@ -53,6 +53,19 @@
           <div class="chart-panel">
             <svg id="rateChart" class="rate-chart" role="img" aria-label="认购倍数走势折线图" viewBox="0 0 920 320"></svg>
             <div id="chartLegend" class="chart-legend"></div>
+            <div class="chart-data-scroll">
+              <table class="chart-data-table" aria-label="认购倍数点位明细">
+                <thead>
+                  <tr>
+                    <th>标的</th>
+                    <th>距截止</th>
+                    <th>认购倍数</th>
+                    <th>采集时间</th>
+                  </tr>
+                </thead>
+                <tbody id="chartDataRows"></tbody>
+              </table>
+            </div>
           </div>
 
           <h3>资金错峰</h3>
