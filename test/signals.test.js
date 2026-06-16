@@ -34,11 +34,11 @@ test("classifies timing pressure", () => {
 
 test("calculates nearest cutoff bucket values", () => {
   const snapshots = [
-    { hoursToCutoff: 49, estimatedMarginMultiple: 90 },
-    { hoursToCutoff: 37, estimatedMarginMultiple: 120 },
+    { hoursToCutoff: 47.5, estimatedMarginMultiple: 90 },
+    { hoursToCutoff: 35.5, estimatedMarginMultiple: 120 },
     { hoursToCutoff: 23.5, estimatedMarginMultiple: 180 },
     { hoursToCutoff: 11.5, estimatedMarginMultiple: 260 },
-    { hoursToCutoff: 8.2, estimatedMarginMultiple: 320 },
+    { hoursToCutoff: 7.8, estimatedMarginMultiple: 320 },
     { hoursToCutoff: 3.8, estimatedMarginMultiple: 500 },
     { hoursToCutoff: 0.2, estimatedMarginMultiple: 620 }
   ];
@@ -51,6 +51,18 @@ test("calculates nearest cutoff bucket values", () => {
   assert.equal(buckets["8h"].estimatedMarginMultiple, 320);
   assert.equal(buckets["4h"].estimatedMarginMultiple, 500);
   assert.equal(buckets.final.estimatedMarginMultiple, 620);
+});
+
+test("assigns each snapshot to only its cutoff bucket interval", () => {
+  const buckets = nearestCutoffBuckets([
+    { id: 1, hoursToCutoff: 24, estimatedMarginMultiple: 180 },
+    { id: 2, hoursToCutoff: 8, estimatedMarginMultiple: 320 }
+  ]);
+
+  assert.equal(buckets["36h"], null);
+  assert.equal(buckets["24h"].id, 1);
+  assert.equal(buckets["12h"], null);
+  assert.equal(buckets["8h"].id, 2);
 });
 
 test("does not fill future cutoff buckets before they are reached", () => {

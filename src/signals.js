@@ -41,12 +41,13 @@ function classifyTiming(hoursToCutoff) {
   return "early";
 }
 
-function nearestSnapshot(snapshots, target, toleranceHours = 4) {
+function nearestSnapshot(snapshots, target, toleranceHours = 4, lowerBound = 0) {
   let best = null;
   let bestDistance = Infinity;
   for (const snapshot of snapshots) {
     const hours = Number(snapshot.hoursToCutoff);
     if (!Number.isFinite(hours)) continue;
+    if (hours > target || hours <= lowerBound) continue;
     const distance = Math.abs(hours - target);
     if (distance <= toleranceHours && distance < bestDistance) {
       best = snapshot;
@@ -56,17 +57,22 @@ function nearestSnapshot(snapshots, target, toleranceHours = 4) {
   return best;
 }
 
-function hasReachedBucket(snapshots, target) {
+function hasReachedBucket(snapshots, target, lowerBound = 0) {
   return snapshots.some((snapshot) => {
     const hours = Number(snapshot.hoursToCutoff);
-    return Number.isFinite(hours) && hours <= target;
+    return Number.isFinite(hours) && hours <= target && hours > lowerBound;
   });
 }
 
 function nearestCutoffBuckets(snapshots, toleranceHours = 4) {
   const result = {};
-  for (const [label, target] of CUTOFF_BUCKETS) {
-    result[label] = hasReachedBucket(snapshots, target) ? nearestSnapshot(snapshots, target, toleranceHours) : null;
+  for (let index = 0; index < CUTOFF_BUCKETS.length; index += 1) {
+    const [label, target] = CUTOFF_BUCKETS[index];
+    const nextBucket = CUTOFF_BUCKETS[index + 1];
+    const lowerBound = nextBucket ? nextBucket[1] : 0;
+    result[label] = hasReachedBucket(snapshots, target, lowerBound)
+      ? nearestSnapshot(snapshots, target, toleranceHours, lowerBound)
+      : null;
   }
   const positiveSnapshots = snapshots
     .filter((snapshot) => Number(snapshot.hoursToCutoff) >= 0)
