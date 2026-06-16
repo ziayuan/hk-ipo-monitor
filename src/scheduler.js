@@ -4,8 +4,11 @@ function hasActiveIpos(snapshot) {
   return Array.isArray(snapshot?.ipos) && snapshot.ipos.some((ipo) => ipo.status === "active" && Number(ipo.hoursToCutoff) >= 0);
 }
 
-function computeNextRefreshMs(snapshot, config) {
-  return hasActiveIpos(snapshot) ? config.activeRefreshMs : config.idleRefreshMs;
+function computeNextRefreshMs(snapshot, config, now = new Date()) {
+  const intervalMs = hasActiveIpos(snapshot) ? config.activeRefreshMs : config.idleRefreshMs;
+  const nowMs = now.getTime();
+  const remainder = nowMs % intervalMs;
+  return remainder === 0 ? intervalMs : intervalMs - remainder;
 }
 
 function createRefreshScheduler({
@@ -13,6 +16,7 @@ function createRefreshScheduler({
   config,
   onSnapshot = () => {},
   logger = console,
+  getNow = () => new Date(),
   setTimer = setTimeout,
   clearTimer = clearTimeout
 }) {
@@ -26,7 +30,7 @@ function createRefreshScheduler({
     timer = null;
   }
 
-  function schedule(delayMs = computeNextRefreshMs(lastSnapshot, config)) {
+  function schedule(delayMs = computeNextRefreshMs(lastSnapshot, config, getNow())) {
     clearCurrentTimer();
     timer = setTimer(run, delayMs);
     if (timer && typeof timer.unref === "function") timer.unref();

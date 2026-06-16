@@ -32,6 +32,7 @@ test("refreshWithHtml stores IPOs, snapshots, source status, and local alerts", 
   assert.equal(repo.listRateSnapshots("01392.HK").length, 1);
   assert.equal(repo.getSourceStatus("wahshing").status, "ok");
   assert.equal(repo.listAlerts().some((alert) => alert.securityCode === "01392.HK"), true);
+  assert.equal(result.ipos.find((ipo) => ipo.securityCode === "01392.HK").rateHistory.length, 1);
   assert.equal(
     result.ipos.find((ipo) => ipo.securityCode === "06675.HK").cutoffBuckets.final.estimatedMarginMultiple,
     3967.68
@@ -73,5 +74,6 @@ test("refreshOnce returns decorated cached IPOs when source fetch fails", async 
   assert.equal(cached.currentSnapshot.estimatedMarginMultiple, 486.71);
   assert.equal(cached.heatSignal, "normal_active");
   assert.equal(typeof cached.hoursToCutoff, "number");
+  assert.equal(cached.rateHistory.length, 1);
   assert.equal(Object.hasOwn(cached.cutoffBuckets, "12h"), true);
 });

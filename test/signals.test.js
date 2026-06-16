@@ -65,18 +65,6 @@ test("assigns each snapshot to only its cutoff bucket interval", () => {
   assert.equal(buckets["8h"].id, 2);
 });
 
-test("uses the first available snapshot after crossing a missed bucket boundary", () => {
-  const buckets = nearestCutoffBuckets([
-    { id: 1, hoursToCutoff: 18, estimatedMarginMultiple: 180 },
-    { id: 2, hoursToCutoff: 9, estimatedMarginMultiple: 320 }
-  ]);
-
-  assert.equal(buckets["24h"].id, 1);
-  assert.equal(buckets["24h"].hoursToCutoff, 18);
-  assert.equal(buckets["12h"].id, 2);
-  assert.equal(buckets["12h"].hoursToCutoff, 9);
-});
-
 test("does not fill future cutoff buckets before they are reached", () => {
   const buckets = nearestCutoffBuckets([
     { hoursToCutoff: 18.6, estimatedMarginMultiple: 506.3 },

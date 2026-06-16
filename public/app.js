@@ -106,27 +106,65 @@ function setEmpty(container, text) {
   container.appendChild(div);
 }
 
-function bucketValue(ipo, bucket) {
-  const value = ipo.cutoffBuckets?.[bucket]?.estimatedMarginMultiple;
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
+function pointFromSnapshot(snapshot, fallbackLabel = null) {
+  const value = Number(snapshot?.estimatedMarginMultiple);
+  const hours = Number(snapshot?.hoursToCutoff);
+  if (!Number.isFinite(value) || !Number.isFinite(hours)) return null;
+  const displayHours = hours <= 0 ? 0 : hours;
+  return {
+    id: snapshot.id || `${snapshot.capturedAt || ""}:${hours}`,
+    label: hours <= 0 ? "final" : `${hours.toFixed(1)}h`,
+    bucketLabel: fallbackLabel,
+    hours: displayHours,
+    actualHours: hours,
+    capturedAt: snapshot.capturedAt,
+    value
+  };
+}
+
+function compactHistorySnapshots(history) {
+  const byHour = new Map();
+  let finalSnapshot = null;
+  for (const snapshot of [...history].sort((a, b) => new Date(a.capturedAt || 0) - new Date(b.capturedAt || 0))) {
+    const hours = Number(snapshot.hoursToCutoff);
+    const capturedAt = String(snapshot.capturedAt || "");
+    if (!Number.isFinite(hours)) continue;
+    if (hours <= 0) {
+      finalSnapshot = snapshot;
+      continue;
+    }
+    const hourKey = capturedAt.slice(0, 13);
+    byHour.set(hourKey || `${hours.toFixed(1)}:${snapshot.id || ""}`, snapshot);
+  }
+  return [...byHour.values(), finalSnapshot].filter(Boolean);
 }
 
 function seriesPoints(ipo) {
-  const points = [];
-  for (const bucket of CHART_BUCKETS) {
-    const value = bucketValue(ipo, bucket);
-    if (value !== null) {
-      points.push({ label: bucket, hours: BUCKET_HOURS[bucket], value });
+  const history = Array.isArray(ipo.rateHistory) ? ipo.rateHistory : [];
+  const points = compactHistorySnapshots(history)
+    .map((snapshot) => pointFromSnapshot(snapshot))
+    .filter(Boolean);
+
+  if (!points.length) {
+    for (const bucket of CHART_BUCKETS) {
+      const point = pointFromSnapshot(ipo.cutoffBuckets?.[bucket], bucket);
+      if (point) points.push(point);
     }
   }
 
   const currentValue = Number(ipo.currentSnapshot?.estimatedMarginMultiple);
   const currentHours = Number(ipo.hoursToCutoff ?? ipo.currentSnapshot?.hoursToCutoff);
   if (ipo.status === "active" && Number.isFinite(currentValue) && Number.isFinite(currentHours) && currentHours >= 0) {
-    const duplicatesBucket = points.some((point) => Math.abs(point.hours - currentHours) < 0.25);
-    if (!duplicatesBucket) {
-      points.push({ label: `距截止${currentHours.toFixed(1)}h`, hours: currentHours, value: currentValue, current: true });
+    const duplicatesSnapshot = points.some((point) => Math.abs(point.actualHours - currentHours) < 0.05 && point.value === currentValue);
+    if (!duplicatesSnapshot) {
+      points.push({
+        id: `current:${ipo.securityCode}`,
+        label: `${currentHours.toFixed(1)}h`,
+        hours: currentHours,
+        actualHours: currentHours,
+        value: currentValue,
+        current: true
+      });
     }
   }
 

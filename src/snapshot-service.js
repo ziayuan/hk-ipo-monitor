@@ -30,6 +30,17 @@ function nearestPriorSnapshot(snapshots, capturedAt, targetHoursAgo, toleranceHo
   return best;
 }
 
+function publicRateSnapshot(snapshot) {
+  return {
+    id: snapshot.id,
+    securityCode: snapshot.securityCode,
+    capturedAt: snapshot.capturedAt,
+    hoursToCutoff: snapshot.hoursToCutoff,
+    estimatedMarginMultiple: snapshot.estimatedMarginMultiple,
+    source: snapshot.source
+  };
+}
+
 function decorateIpo(ipo, history, nowIso, config) {
   const latest = history[history.length - 1] || null;
   const previous4h = latest ? nearestPriorSnapshot(history.slice(0, -1), latest.capturedAt, 4) : null;
@@ -47,6 +58,7 @@ function decorateIpo(ipo, history, nowIso, config) {
     timingSignal: classifyTiming(hoursToCutoff),
     hoursToCutoff,
     cutoffBuckets: nearestCutoffBuckets(history),
+    rateHistory: history.map(publicRateSnapshot),
     sourceFreshness: latest ? latest.capturedAt : null
   };
 }

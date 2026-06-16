@@ -71,7 +71,7 @@ function nearestCutoffBuckets(snapshots, toleranceHours = 4) {
     const nextBucket = CUTOFF_BUCKETS[index + 1];
     const lowerBound = nextBucket ? nextBucket[1] : 0;
     result[label] = hasReachedBucket(snapshots, target, lowerBound)
-      ? nearestSnapshot(snapshots, target, Number.POSITIVE_INFINITY, lowerBound)
+      ? nearestSnapshot(snapshots, target, toleranceHours, lowerBound)
       : null;
   }
   const positiveSnapshots = snapshots
