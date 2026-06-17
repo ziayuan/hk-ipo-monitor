@@ -57,10 +57,18 @@ data/hk-ipo-monitor.sqlite
 
 如果服务已经部署在 `dj` 服务器上，并且服务器上的 `hk-ipo-monitor.service` 正在后台运行，推荐用 SSH 隧道直接访问服务器服务。
 
-不要先执行本机 `npm start`。在一个终端里执行：
+不要先执行本机 `npm start`。推荐固定使用本机 `4189` 端口访问服务器数据，避免和本机服务的 `4188` 端口混在一起。
+
+如果之前建过 SSH 隧道，或者电脑换过网络/IP，先清理旧隧道再重建。直接复制执行下面这一整段：
 
 ```bash
-ssh -N -L 4189:127.0.0.1:4188 dj
+TUNNEL_PORT=4189
+TUNNEL_SOCKET="$HOME/.ssh/hk-ipo-monitor-tunnel.sock"
+ssh -S "$TUNNEL_SOCKET" -O exit dj 2>/dev/null || true
+rm -f "$TUNNEL_SOCKET"
+PIDS=$(lsof -tiTCP:$TUNNEL_PORT -sTCP:LISTEN 2>/dev/null || true)
+if [ -n "$PIDS" ]; then kill $PIDS; fi
+ssh -fN -M -S "$TUNNEL_SOCKET" -L "$TUNNEL_PORT:127.0.0.1:4188" dj
 ```
 
 然后在浏览器打开：
@@ -71,16 +79,10 @@ http://localhost:4189
 
 这时页面虽然是从本机浏览器打开的，但实际访问的是 `dj` 服务器上的服务和服务器上的 SQLite 数据库。
 
-如果你确认本机 `4188` 端口没有被占用，也可以映射到同一个端口：
+如果需要手动关闭这个后台隧道，可以执行：
 
 ```bash
-ssh -N -L 4188:127.0.0.1:4188 dj
-```
-
-然后打开：
-
-```text
-http://localhost:4188
+ssh -S "$HOME/.ssh/hk-ipo-monitor-tunnel.sock" -O exit dj 2>/dev/null || true
 ```
 
 ## 把服务器数据库拷回本机
