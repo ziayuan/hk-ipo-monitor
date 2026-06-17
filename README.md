@@ -59,15 +59,24 @@ data/hk-ipo-monitor.sqlite
 
 不要先执行本机 `npm start`。推荐固定使用本机 `4189` 端口访问服务器数据，避免和本机服务的 `4188` 端口混在一起。
 
-如果之前建过 SSH 隧道，或者电脑换过网络/IP，先清理旧隧道再重建。直接复制执行下面这一整段：
+如果之前建过 SSH 隧道，或者电脑换过网络/IP，先清理旧隧道，再从服务器同步一次数据库到本机，最后重建隧道。直接复制执行下面这一整段：
 
 ```bash
+set -e
 TUNNEL_PORT=4189
 TUNNEL_SOCKET="$HOME/.ssh/hk-ipo-monitor-tunnel.sock"
+LOCAL_DB="data/hk-ipo-monitor.sqlite"
+REMOTE_DB="~/apps/hk-ipo-monitor/data/hk-ipo-monitor.sqlite"
+
 ssh -S "$TUNNEL_SOCKET" -O exit dj 2>/dev/null || true
 rm -f "$TUNNEL_SOCKET"
 PIDS=$(lsof -tiTCP:$TUNNEL_PORT -sTCP:LISTEN 2>/dev/null || true)
-if [ -n "$PIDS" ]; then kill $PIDS; fi
+if [ -n "$PIDS" ]; then kill $PIDS || true; fi
+
+mkdir -p "$(dirname "$LOCAL_DB")"
+scp "dj:$REMOTE_DB" "$LOCAL_DB.tmp"
+mv "$LOCAL_DB.tmp" "$LOCAL_DB"
+
 ssh -fN -M -S "$TUNNEL_SOCKET" -L "$TUNNEL_PORT:127.0.0.1:4188" dj
 ```
 
@@ -77,7 +86,7 @@ ssh -fN -M -S "$TUNNEL_SOCKET" -L "$TUNNEL_PORT:127.0.0.1:4188" dj
 http://localhost:4189
 ```
 
-这时页面虽然是从本机浏览器打开的，但实际访问的是 `dj` 服务器上的服务和服务器上的 SQLite 数据库。
+这时页面虽然是从本机浏览器打开的，但实际访问的是 `dj` 服务器上的服务和服务器上的 SQLite 数据库。上面的命令也会顺手把服务器数据库复制到本机 `data/hk-ipo-monitor.sqlite`，方便你之后离线查看或调试。
 
 如果需要手动关闭这个后台隧道，可以执行：
 
@@ -91,7 +100,8 @@ ssh -S "$HOME/.ssh/hk-ipo-monitor-tunnel.sock" -O exit dj 2>/dev/null || true
 
 ```bash
 mkdir -p data
-scp dj:~/apps/hk-ipo-monitor/data/hk-ipo-monitor.sqlite data/hk-ipo-monitor.sqlite
+scp dj:~/apps/hk-ipo-monitor/data/hk-ipo-monitor.sqlite data/hk-ipo-monitor.sqlite.tmp
+mv data/hk-ipo-monitor.sqlite.tmp data/hk-ipo-monitor.sqlite
 npm start
 ```
 
